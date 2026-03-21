@@ -1,0 +1,39 @@
+{
+  "name": "unsaid-talks-resume-app",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI-powered resume analyzer and builder with ATS scoring, Gemini AI, and Supabase",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "serve": "npx http-server . -p 3000 -c-1"
+  },
+  "keywords": [
+    "resume",
+    "ai",
+    "ats",
+    "gemini",
+    "supabase",
+    "resume-analyzer"
+  ],
+  "author": "UnsaidTalks",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.37.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-rate-limit": "^7.5.1",
+    "openai": "^6.32.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

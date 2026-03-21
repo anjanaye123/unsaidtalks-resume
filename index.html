@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UnsaidTalks - AI Resume Analyzer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- same fonts as resume builder -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Syne:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Opening Animation — structure identical, enhanced via CSS -->
+  <div class="opening-screen" id="openingScreen">
+    <div class="tech-container">
+      <div class="resume-scanner">
+        <div class="resume-doc">
+          <div class="resume-line"></div>
+          <div class="resume-line"></div>
+          <div class="resume-line"></div>
+          <div class="resume-line"></div>
+        </div>
+        <div class="scanner-laser"></div>
+        <div class="data-particles">
+          <div class="particle p-1"></div>
+          <div class="particle p-2"></div>
+          <div class="particle p-3"></div>
+          <div class="particle p-4"></div>
+        </div>
+      </div>
+      <div class="brand-reveal">
+        <h1 class="brand-text">UnsaidTalks</h1>
+        <p class="brand-tagline">Unfold Success from Unfold Experiences</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application -->
+  <div class="main-app" id="mainApp">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-brand">UnsaidTalks</div>
+      <div class="nav-actions">
+        <a href="builder.html" class="nav-btn">Resume Builder</a>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="heroSection">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          AI-Powered Resume Analysis<br>
+          <span class="gradient-text">Land Your Dream Job</span>
+        </h1>
+        <p class="hero-subtitle">Get an instant ATS score, keyword gap analysis, and AI-powered recommendations — in
+          under 10 seconds.</p>
+
+        <!-- 4-Step Flow -->
+        <div class="hero-steps">
+          <div class="hero-step">
+            <span class="hero-step-icon">📄</span>
+            <span class="hero-step-num">Step 01</span>
+            <span class="hero-step-label">Upload Resume</span>
+          </div>
+          <span class="hero-step-arrow">→</span>
+          <div class="hero-step">
+            <span class="hero-step-icon">🎯</span>
+            <span class="hero-step-num">Step 02</span>
+            <span class="hero-step-label">Add Job Description</span>
+          </div>
+          <span class="hero-step-arrow">→</span>
+          <div class="hero-step">
+            <span class="hero-step-icon">📊</span>
+            <span class="hero-step-num">Step 03</span>
+            <span class="hero-step-label">Get ATS Score</span>
+          </div>
+          <span class="hero-step-arrow">→</span>
+          <div class="hero-step">
+            <span class="hero-step-icon">🤖</span>
+            <span class="hero-step-num">Step 04</span>
+            <span class="hero-step-label">Ask AI Coach</span>
+          </div>
+        </div>
+
+        <button class="cta-btn" onclick="scrollToUpload()">Start Analysis →</button>
+      </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="upload-section" id="uploadSection">
+      <div class="container">
+        <div class="section-header">
+          <h2>Upload Your Resume</h2>
+          <p>Support PDF format • Max 50MB</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="resumeFile" accept=".pdf" hidden>
+          <div class="upload-icon">📄</div>
+          <h3>Drop your resume here</h3>
+          <p>or click to browse</p>
+          <button class="upload-btn"
+            onclick="event.stopPropagation(); document.getElementById('resumeFile').click()">Choose File</button>
+        </div>
+
+        <div class="file-preview" id="filePreview" style="display: none;">
+          <div class="file-info">
+            <span class="file-icon">📄</span>
+            <div class="file-details">
+              <span class="file-name" id="fileName">resume.pdf</span>
+              <span class="file-size" id="fileSize">2.5 MB</span>
+            </div>
+            <button class="remove-btn" onclick="removeFile()">✕</button>
+          </div>
+          <button class="btn-next" onclick="showJDSection()">Next: Add Job Description →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Job Description Section -->
+    <section class="jd-section" id="jdSection" style="display: none;">
+      <div class="container">
+        <div class="section-header">
+          <h2>Job Description (Optional)</h2>
+          <p>Paste the job description to compare with your resume</p>
+        </div>
+
+        <div class="form-card">
+          <textarea id="jobDescription" placeholder="Paste the complete job description here..." rows="8"></textarea>
+          <input type="text" id="jobTitle" placeholder="Job Title (e.g., Senior Software Engineer)">
+
+          <div class="btn-group">
+            <button class="btn-secondary" onclick="showUploadSection()">← Back</button>
+            <button class="btn-primary" onclick="startAnalysis()">Analyze Resume →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analysis Section -->
+    <section class="analysis-section" id="analysisSection" style="display: none;">
+      <div class="analyzing-overlay" id="analyzingOverlay">
+        <div class="analyzing-content">
+          <div class="spinner"></div>
+          <div class="analyzing-text" id="analyzingText">Initializing AI Engine...</div>
+          <div class="tech-lines">
+            <div class="tech-line" id="techLine1">▸ Extracting resume data...</div>
+            <div class="tech-line" id="techLine2">▸ Analyzing structure...</div>
+            <div class="tech-line" id="techLine3">▸ Computing ATS score...</div>
+            <div class="tech-line" id="techLine4">▸ Generating insights...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="results-grid">
+          <!-- ATS Score Card -->
+          <div class="card score-card">
+            <h3>ATS Score</h3>
+            <div class="score-circle-container">
+              <svg class="score-circle" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="85" class="score-bg"></circle>
+                <circle cx="100" cy="100" r="85" class="score-fill" id="scoreCircle"></circle>
+              </svg>
+              <div class="score-value" id="scoreValue">0</div>
+            </div>
+            <div class="score-label" id="scoreLabel">Analyzing...</div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="card breakdown-card">
+            <h3>Score Breakdown</h3>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>Clarity</span>
+                <span id="clarityScore">0</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="clarityBar"></div>
+              </div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>Impact</span>
+                <span id="impactScore">0</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="impactBar"></div>
+              </div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>Structure</span>
+                <span id="sectionsScore">0</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="sectionsBar"></div>
+              </div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>Action Words</span>
+                <span id="actionScore">0</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="actionBar"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Professional Summary -->
+          <div class="card summary-card">
+            <h3>Professional Summary</h3>
+            <div class="summary-content" id="summaryContent">Generating professional summary...</div>
+            <button class="btn-copy" onclick="copySummary()">Copy Summary</button>
+          </div>
+
+          <!-- JD Match -->
+          <div class="card jd-match-card" id="jdMatchCard" style="display: none;">
+            <h3>Job Description Match</h3>
+            <div class="match-score">
+              <span class="match-percentage" id="matchPercentage">0%</span>
+              <span class="match-label">Match</span>
+            </div>
+            <div class="skills-section">
+              <h4>Matched Skills</h4>
+              <div class="skills-list" id="matchedSkills"></div>
+            </div>
+            <div class="skills-section">
+              <h4>Missing Skills</h4>
+              <div class="skills-list" id="missingSkills"></div>
+            </div>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="card recommendations-card">
+            <h3>AI Recommendations</h3>
+            <div class="recommendations-list" id="recommendationsList">
+              <div class="recommendation-item">Generating personalized recommendations...</div>
+            </div>
+          </div>
+
+          <!-- Chat Coach -->
+          <div class="card chat-card">
+            <h3>AI Resume Coach</h3>
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-message assistant">
+                <div class="message-bubble">Hi! I've analyzed your resume. Ask me anything to improve it!</div>
+              </div>
+            </div>
+            <div class="chat-input-container">
+              <input type="text" id="chatInput" placeholder="Ask me anything about your resume..."
+                onkeypress="if(event.key==='Enter') sendChatMessage()">
+              <button class="send-btn" onclick="sendChatMessage()">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-new-analysis" onclick="resetAnalysis()">Analyze New Resume</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

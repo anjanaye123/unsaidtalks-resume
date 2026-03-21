@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>UnsaidTalks - Resume Compiler</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Syne:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080c12;
+      --panel: #0f1520;
+      --panel2: #141c2a;
+      --border: #1e2a3a;
+      --border2: #263347;
+      --accent: #ff6b35;
+      --accent2: #ff8f5e;
+      --accent-glow: rgba(255, 107, 53, 0.15);
+      --text: #dde4f0;
+      --muted: #6b7a96;
+      --muted2: #8b9ab5;
+      --success: #3dd68c;
+      --success-bg: rgba(61, 214, 140, 0.08);
+      --warn: #f5a623;
+      --warn-bg: rgba(245, 166, 35, 0.08);
+      --danger: #ff4d6d;
+      --danger-bg: rgba(255, 77, 109, 0.08);
+      --info: #4d9fff;
+      --info-bg: rgba(77, 159, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+    }
+
+    /* ── BOOT SCREEN ─────────────────────────────────────── */
+    #boot {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: 'JetBrains Mono', monospace;
+      transition: opacity 0.6s ease;
+    }
+
+    .boot-console {
+      max-width: 560px;
+      width: 90%;
+    }
+
+    .boot-line {
+      opacity: 0;
+      color: var(--muted);
+      margin-bottom: 0.7rem;
+      font-size: 0.95rem;
+    }
+
+    @keyframes fadeLine {
+      to {
+        opacity: 1;
+      }
+    }
+
+    #boot.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── LAYOUT ──────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+    }
+
+    /* ── EDITOR PANE ─────────────────────────────────────── */
+    .editor-pane {
+      width: 42%;
+      min-width: 380px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+    }
+
+    .nav-header {
+      padding: 1.1rem 1.6rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .brand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: var(--text);
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .editor-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.4rem;
+    }
+
+    /* ── SECTION BOXES ───────────────────────────────────── */
+    .section-box {
+      margin-bottom: 1.2rem;
+      background: var(--panel2);
+      padding: 1.2rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s;
+    }
+
+    .section-box:focus-within {
+      border-color: var(--border2);
+    }
+
+    .section-box h3 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-num {
+      background: var(--accent);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 800;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── FORMS ───────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 0.7rem;
+    }
+
+    label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      padding: 0.65rem 0.9rem;
+      border-radius: 7px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.88rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--muted);
+      opacity: 0.6;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.6;
+    }
+
+    /* ── BUTTONS ─────────────────────────────────────────── */
+    .btn {
+      padding: 0.55rem 1.1rem;
+      border-radius: 7px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: none;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: #e85c20;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 25px rgba(255, 107, 53, 0.5);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border2);
+      color: var(--muted2);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+    }
+
+    .btn-ghost:hover {
+      color: var(--accent);
+    }
+
+    .btn-suggest {
+      font-size: 0.68rem;
+      padding: 0.25rem 0.55rem;
+      background: var(--accent-glow);
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      color: var(--accent);
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      transition: all 0.15s;
+    }
+
+    .btn-suggest:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-suggest:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── ITEM CARDS ──────────────────────────────────────── */
+    .item-card {
+      border-left: 2px solid var(--accent);
+      padding: 1rem 1rem 0.5rem 1.2rem;
+      margin-bottom: 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 0 8px 8px 0;
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.7rem;
+    }
+
+    .remove-btn {
+      color: var(--muted);
+      background: none;
+      border: none;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.5px;
+      transition: color 0.15s;
+    }
+
+    .remove-btn:hover {
+      color: var(--danger);
+    }
+
+    /* ── SKILLS TAGS ─────────────────────────────────────── */
+    .skill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--panel2);
+      border: 1px solid var(--border2);
+      padding: 0.35rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+
+    .skill-tag:hover {
+      border-color: var(--accent);
+    }
+
+    .skill-tag .rm {
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+
+    .skill-tag .rm:hover {
+      color: var(--accent);
+    }
+
+    /* ── PREVIEW PANE ────────────────────────────────────── */
+    .preview-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      min-width: 0;
+    }
+
+    .preview-toolbar {
+      padding: 0.75rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      flex-shrink: 0;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    /* ── ATS BADGE ───────────────────────────────────────── */
+    .score-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg);
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      transition: border-color 0.4s;
+    }
+
+    .score-chip .label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+    }
+
+    .score-chip .val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--success);
+      transition: color 0.3s;
+    }
+
+    /* ── SUGGESTIONS DRAWER ──────────────────────────────── */
+    /* The drawer slides out from the right side of the preview pane */
+    #suggestionsDrawer {
+      position: fixed;
+      top: 0;
+      right: -440px;
+      /* hidden off-screen */
+      width: 420px;
+      height: 100vh;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+    }
+
+    #suggestionsDrawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      padding: 1.2rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .drawer-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .drawer-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.15s;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+
+    .drawer-close:hover {
+      color: var(--danger);
+    }
+
+    /* Drawer overlay */
+    #drawerOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+
+    #drawerOverlay.open {
+      display: block;
+    }
+
+    /* ── TIP CARDS ───────────────────────────────────────── */
+    .tip-section-title {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 1rem 0 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tip-card {
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      border: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .tip-card.high {
+      background: var(--danger-bg);
+      border-color: rgba(255, 77, 109, 0.2);
+    }
+
+    .tip-card.medium {
+      background: var(--warn-bg);
+      border-color: rgba(245, 166, 35, 0.2);
+    }
+
+    .tip-card.low {
+      background: var(--info-bg);
+      border-color: rgba(77, 159, 255, 0.15);
+    }
+
+    .tip-card.strength {
+      background: var(--success-bg);
+      border-color: rgba(61, 214, 140, 0.2);
+    }
+
+    .tip-badge {
+      display: inline-block;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tip-badge.high {
+      background: rgba(255, 77, 109, 0.2);
+      color: var(--danger);
+    }
+
+    .tip-badge.medium {
+      background: rgba(245, 166, 35, 0.2);
+      color: var(--warn);
+    }
+
+    .tip-badge.low {
+      background: rgba(77, 159, 255, 0.15);
+      color: var(--info);
+    }
+
+    .tip-badge.strength {
+      background: rgba(61, 214, 140, 0.15);
+      color: var(--success);
+    }
+
+    .tip-issue {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      line-height: 1.4;
+    }
+
+    .tip-fix {
+      font-size: 0.8rem;
+      color: var(--muted2);
+      line-height: 1.5;
+      margin-bottom: 0.35rem;
+    }
+
+    .tip-impact {
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--success);
+      letter-spacing: 0.5px;
+    }
+
+    .tip-why {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 0.4rem;
+      line-height: 1.4;
+    }
+
+    .tip-how {
+      font-size: 0.8rem;
+      color: var(--muted2);
+      margin-bottom: 0.35rem;
+      line-height: 1.5;
+    }
+
+    .tip-example {
+      font-size: 0.75rem;
+      color: var(--text);
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      padding: 0.5rem 0.7rem;
+      margin-top: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      border-left: 2px solid var(--accent);
+      white-space: pre-wrap;
+    }
+
+    .tip-expandable {
+      cursor: pointer;
+    }
+
+    .tip-expandable .tip-details {
+      display: none;
+      margin-top: 0.5rem;
+    }
+
+    .tip-expandable.expanded .tip-details {
+      display: block;
+    }
+
+    .tip-expand-icon {
+      font-size: 0.7rem;
+      color: var(--muted);
+      float: right;
+    }
+
+    /* ── JD MATCH SECTION IN DRAWER ──────────────────────── */
+    .jd-match-bar-wrap {
+      margin: 0.8rem 0;
+    }
+
+    .jd-match-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .jd-match-pct {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .jd-verdict {
+      font-size: 0.78rem;
+      color: var(--muted2);
+      margin-bottom: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .progress-bar-bg {
+      background: var(--border);
+      border-radius: 20px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 20px;
+      transition: width 0.6s ease;
+    }
+
+    .skill-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .skill-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .skill-pill.matched {
+      background: rgba(61, 214, 140, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(61, 214, 140, 0.3);
+    }
+
+    .skill-pill.missing {
+      background: rgba(255, 77, 109, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(255, 77, 109, 0.25);
+    }
+
+    /* ── SCORE BREAKDOWN ─────────────────────────────────── */
+    .breakdown-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.3rem;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .breakdown-label {
+      font-size: 0.72rem;
+      color: var(--muted2);
+      width: 90px;
+      flex-shrink: 0;
+    }
+
+    .breakdown-bar-bg {
+      flex: 1;
+      background: var(--border);
+      border-radius: 10px;
+      height: 5px;
+      overflow: hidden;
+    }
+
+    .breakdown-bar {
+      height: 100%;
+      border-radius: 10px;
+      background: var(--accent);
+      transition: width 0.5s ease;
+    }
+
+    .breakdown-pts {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      width: 28px;
+      text-align: right;
+    }
+
+    /* ── NOTIFY BADGE (tips count) ───────────────────────── */
+    .notify-count {
+      display: none;
+      background: var(--danger);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 800;
+      padding: 0.1rem 0.4rem;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── TEMPLATE SELECT ─────────────────────────────────── */
+    .tpl-select {
+      background: var(--bg);
+      border: 1.5px solid var(--border2);
+      color: var(--text);
+      padding: 0.45rem 0.7rem;
+      border-radius: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tpl-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* ── DOCUMENT PREVIEW ────────────────────────────────── */
+    .doc-container {
+      flex: 1;
+      overflow: auto;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .a4 {
+      width: 8.5in;
+      min-height: 11in;
+      background: white;
+      color: black;
+      box-shadow: 0 4px 40px rgba(0, 0, 0, 0.6);
+      transform-origin: top center;
+      flex-shrink: 0;
+      padding: 0.5in;
+      transition: transform 0.3s;
+    }
+
+    @media(max-width: 1600px) {
+      .a4 {
+        transform: scale(0.80);
+        margin-bottom: -2.2in;
+      }
+    }
+
+    @media(max-width: 1400px) {
+      .a4 {
+        transform: scale(0.65);
+        margin-bottom: -3.8in;
+      }
+    }
+
+    /* ── RESUME STYLES ───────────────────────────────────── */
+    .rt-wrap {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      line-height: 1.5;
+      color: #222;
+    }
+
+    .rt-name {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.3rem;
+      color: #111;
+    }
+
+    .rt-contact {
+      font-size: 0.9rem;
+      color: #555;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .rt-section {
+      margin-bottom: 1.8rem;
+    }
+
+    .rt-heading {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #111;
+      border-bottom: 2px solid #333;
+      padding-bottom: 0.3rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    .rt-text {
+      font-size: 0.95rem;
+      color: #333;
+    }
+
+    .rt-item {
+      margin-bottom: 1.2rem;
+    }
+
+    .rt-item-hdr {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #111;
+    }
+
+    .rt-item-sub {
+      display: flex;
+      justify-content: space-between;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+
+    .rt-desc {
+      font-size: 0.95rem;
+      color: #444;
+    }
+
+    .rt-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .rt-skill {
+      background: #eee;
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Templates */
+    .template-minimal .rt-name {
+      font-weight: 300;
+      font-size: 2.3rem;
+      letter-spacing: 2px;
+      text-align: center;
+      text-transform: uppercase;
+      color: #222;
+    }
+
+    .template-minimal .rt-contact {
+      justify-content: center;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .template-minimal .rt-heading {
+      text-align: center;
+      border-bottom: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .template-minimal .rt-heading::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -8px;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 1px;
+      background: #888;
+    }
+
+    .template-technical {
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      color: #000;
+    }
+
+    .template-technical .rt-name {
+      border-bottom: 2px solid #000;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .template-technical .rt-heading {
+      background: #f0f0f0;
+      padding: 0.3rem 0.6rem;
+      border-left: 4px solid #333;
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .template-technical .rt-skill {
+      background: transparent;
+      border: 1px dashed #777;
+      border-radius: 0;
+    }
+
+    .template-executive {
+      font-family: 'Georgia', serif;
+      color: #111;
+    }
+
+    .template-executive .rt-name {
+      font-size: 2.8rem;
+      color: #1a365d;
+      text-align: center;
+      font-weight: normal;
+      margin-bottom: 0.3rem;
+      border-bottom: 1px solid #1a365d;
+      padding-bottom: 0.8rem;
+    }
+
+    .template-executive .rt-contact {
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .template-executive .rt-heading {
+      color: #1a365d;
+      font-size: 1.15rem;
+      font-family: 'Segoe UI', sans-serif;
+      text-transform: uppercase;
+      border-bottom: 2px solid #1a365d;
+      letter-spacing: 1px;
+    }
+
+    .template-creative {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .template-creative .rt-name {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #ff6b35;
+      letter-spacing: -2px;
+      text-transform: lowercase;
+    }
+
+    .template-creative .rt-contact {
+      color: #888;
+      font-weight: 600;
+      border-top: 2px dashed #ff6b35;
+      padding-top: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .template-creative .rt-heading {
+      border-bottom: none;
+      display: inline-block;
+      background: #ffe4d6;
+      color: #ff6b35;
+      padding: 0.2rem 1rem;
+      border-radius: 20px;
+      font-size: 1.05rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .template-creative .rt-skill {
+      background: white;
+      border: 2px solid #ff6b35;
+      color: #ff6b35;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    .template-creative .rt-item-hdr {
+      color: #ff6b35;
+      font-weight: 900;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 107, 53, 0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Empty state */
+    .empty-drawer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--muted);
+      text-align: center;
+      gap: 0.5rem;
+    }
+
+    .empty-drawer .icon {
+      font-size: 2rem;
+      opacity: 0.4;
+    }
+
+    .empty-drawer p {
+      font-size: 0.82rem;
+    }
+
+    /* Print/PDF (unchanged from original) */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+      }
+
+      .a4 {
+        transform: none !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
+
+      .preview-pane,
+      .doc-container {
+        overflow: visible !important;
+        height: auto !important;
+      }
+    }
+
+    .pdf-export-mode {
+      transform: none !important;
+      margin: 0 !important;
+      width: 8.5in !important;
+      height: auto !important;
+      position: absolute !important;
+      left: -9999px !important;
+      top: 0 !important;
+      z-index: -100 !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- BOOT -->
+  <div id="boot">
+    <div class="boot-console">
+      <div class="boot-line"
+        style="animation:fadeLine 0.1s forwards 0.2s; color:var(--accent); font-size:1rem; font-weight:800;">>
+        UNSAIDTALKS RESUME BUILDER v2.0</div>
+      <div class="boot-line" style="animation:fadeLine 0.1s forwards 0.6s">> loading templates.......... [OK]</div>
+      <div class="boot-line" style="animation:fadeLine 0.1s forwards 1.0s">> connecting ats engine....... [OK]</div>
+      <div class="boot-line" style="animation:fadeLine 0.1s forwards 1.4s">> loading suggestions core.... [OK]</div>
+      <div class="boot-line" style="animation:fadeLine 0.1s forwards 1.8s; color:var(--success); font-weight:800;">>
+        system ready._</div>
+    </div>
+  </div>
+
+  <!-- SUGGESTIONS DRAWER OVERLAY -->
+  <div id="drawerOverlay" onclick="closeDrawer()"></div>
+
+  <!-- SUGGESTIONS DRAWER -->
+  <div id="suggestionsDrawer">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title">ATS Analysis</div>
+        <div id="drawerSubtitle"
+          style="font-size:0.72rem; color:var(--muted); margin-top:0.2rem; font-family:'JetBrains Mono',monospace;">
+        </div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <div class="empty-drawer">
+        <div class="icon">📊</div>
+        <p>Fill in your resume and ATS analysis will appear here automatically.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="layout">
+
+    <!-- EDITOR PANE -->
+    <div class="editor-pane">
+      <div class="nav-header">
+        <div class="brand">UNSAID<span>TALKS</span></div>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span
+            style="font-size:0.62rem; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">Template</span>
+          <select id="tpl" class="tpl-select" onchange="resumeData.template=this.value; updatePreview()">
+            <option value="modern">Modern</option>
+            <option value="minimal">Minimal</option>
+            <option value="technical">Technical</option>
+            <option value="executive">Executive</option>
+            <option value="creative">Creative</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="editor-content">
+
+        <!-- JD INPUT -->
+        <div class="section-box" style="border-color:rgba(255,107,53,0.3); background:rgba(255,107,53,0.04);">
+          <h3>
+            <div class="section-label">
+              <span class="section-num">JD</span>
+              <span>Target Job Description</span>
+            </div>
+            <span style="font-size:0.65rem; color:var(--muted);">OPTIONAL</span>
+          </h3>
+          <textarea id="jdIn"
+            placeholder="Paste the job description to get JD match % and tailored keyword suggestions..."
+            oninput="resumeData.job_description=this.value; updatePreview()"
+            style="min-height:100px; border-color:rgba(255,107,53,0.25); font-size:0.82rem;"></textarea>
+        </div>
+
+        <!-- IDENTITY -->
+        <div class="section-box">
+          <h3>
+            <div class="section-label"><span class="section-num">01</span><span>Identity</span></div>
+          </h3>
+          <div class="form-grid">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Full Name</label>
+              <input type="text" id="n" placeholder="Jane Smith"
+                oninput="resumeData.personal.name=this.value; updatePreview()">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Email</label>
+              <input type="text" id="e" placeholder="jane@email.com"
+                oninput="resumeData.personal.email=this.value; updatePreview()">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Phone</label>
+              <input type="text" id="p" placeholder="+91 98765 43210"
+                oninput="resumeData.personal.phone=this.value; updatePreview()">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Location</label>
+              <input type="text" id="l" placeholder="Bengaluru, India"
+                oninput="resumeData.personal.location=this.value; updatePreview()">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>LinkedIn</label>
+              <input type="text" id="lin" placeholder="linkedin.com/in/jane"
+                oninput="resumeData.personal.linkedin=this.value; updatePreview()">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Portfolio / Website</label>
+              <input type="text" id="w" placeholder="janesmith.dev"
+                oninput="resumeData.personal.website=this.value; updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="section-box">
+          <h3>
+            <div class="section-label"><span class="section-num">02</span><span>Professional Summary</span></div>
+            <button class="btn-suggest" id="sumSuggestBtn" onclick="aiSuggestSummary()">💡 Suggest</button>
+          </h3>
+          <textarea id="sum"
+            placeholder="3–4 sentences: your title + years of experience + a quantified win + what you're seeking..."
+            oninput="resumeData.summary=this.value; updatePreview()" style="min-height:100px;"></textarea>
+          <div id="sumSuggestionBox"
+            style="display:none; margin-top:0.7rem; padding:0.8rem; background:rgba(255,107,53,0.05); border:1px solid rgba(255,107,53,0.2); border-radius:7px; font-size:0.82rem; color:var(--text); line-height:1.6;">
+          </div>
+        </div>
+
+        <!-- EXPERIENCE -->
+        <div class="section-box">
+          <h3>
+            <div class="section-label"><span class="section-num">03</span><span>Experience</span></div>
+            <button class="btn-outline" style="font-size:0.7rem; padding:0.3rem 0.7rem;" onclick="addExp()">+
+              Role</button>
+          </h3>
+          <div id="exp-container"></div>
+        </div>
+
+        <!-- EDUCATION -->
+        <div class="section-box">
+          <h3>
+            <div class="section-label"><span class="section-num">04</span><span>Education</span></div>
+            <button class="btn-outline" style="font-size:0.7rem; padding:0.3rem 0.7rem;" onclick="addEdu()">+
+              Degree</button>
+          </h3>
+          <div id="edu-container"></div>
+        </div>
+
+        <!-- PROJECTS -->
+        <div class="section-box">
+          <h3>
+            <div class="section-label"><span class="section-num">05</span><span>Projects</span></div>
+            <button class="btn-outline" style="font-size:0.7rem; padding:0.3rem 0.7rem;" onclick="addProj()">+
+              Project</button>
+          </h3>
+          <div id="proj-container"></div>
+        </div>
+
+        <!-- SKILLS -->
+        <div class="section-box">
+          <h3>
+            <div class="section-label"><span class="section-num">06</span><span>Skills</span></div>
+          </h3>
+          <div style="display:flex; gap:0.6rem; margin-bottom:0.8rem;">
+            <input type="text" id="skillIn" placeholder="e.g. React, Python, AWS — press Enter" style="flex:1;"
+              onkeypress="if(event.key==='Enter'){event.preventDefault(); addSkill();}">
+            <button class="btn-outline" style="font-size:0.75rem; padding:0.5rem 0.9rem;"
+              onclick="addSkill()">Add</button>
+          </div>
+          <div id="skill-container" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PREVIEW PANE -->
+    <div class="preview-pane">
+      <div class="preview-toolbar">
+        <div class="toolbar-left">
+          <!-- ATS SCORE -->
+          <div class="score-chip" id="atsBox">
+            <div>
+              <div class="label">ATS</div>
+              <div class="val" id="atsVal">--</div>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:var(--muted);">/100</div>
+          </div>
+
+          <!-- JD MATCH -->
+          <div class="score-chip" id="jdBox" style="display:none;">
+            <div>
+              <div class="label">JD Match</div>
+              <div class="val" id="jdVal" style="color:var(--accent);">--%</div>
+            </div>
+          </div>
+
+          <!-- ANALYSIS BUTTON -->
+          <button class="btn-outline" id="analysisBtn" onclick="openDrawer()"
+            style="display:flex; align-items:center; gap:0.5rem; border-color:var(--accent); color:var(--accent); background:var(--accent-glow);">
+            <span>📊</span>
+            <span>Analysis</span>
+            <span class="notify-count" id="notifyCount">0</span>
+          </button>
+        </div>
+
+        <!-- COMPILE BUTTON — UNCHANGED -->
+        <button class="btn btn-primary" onclick="exportPDF()">COMPILE</button>
+      </div>
+
+      <div class="doc-container">
+        <div class="a4" id="resumePreview"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── BOOT ─────────────────────────────────────────────────────────────
+    setTimeout(() => { document.getElementById('boot').classList.add('hidden'); }, 3000);
+
+    const API_URL = 'http://localhost:8000/api';
+
+    // ── DATA MODEL ────────────────────────────────────────────────────────
+    window.resumeData = {
+      personal: { name: '', email: '', phone: '', location: '', linkedin: '', website: '' },
+      summary: '',
+      skills: [],
+      experience: [],
+      projects: [],
+      education: [],
+      template: 'modern',
+      job_description: ''
+    };
+
+    // ── DRAWER OPEN/CLOSE ─────────────────────────────────────────────────
+    function openDrawer() {
+      document.getElementById('suggestionsDrawer').classList.add('open');
+      document.getElementById('drawerOverlay').classList.add('open');
+    }
+    function closeDrawer() {
+      document.getElementById('suggestionsDrawer').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('open');
+    }
+
+    // ── MUTATORS ──────────────────────────────────────────────────────────
+    function addExp() { resumeData.experience.push({ title: '', company: '', duration: '', description: '' }); renderForms(); }
+    function rmExp(i) { resumeData.experience.splice(i, 1); renderForms(); updatePreview(); }
+    function addEdu() { resumeData.education.push({ school: '', degree: '', field: '', year: '', gpa: '' }); renderForms(); }
+    function rmEdu(i) { resumeData.education.splice(i, 1); renderForms(); updatePreview(); }
+    function addProj() { resumeData.projects.push({ title: '', description: '', link: '', technologies: '' }); renderForms(); }
+    function rmProj(i) { resumeData.projects.splice(i, 1); renderForms(); updatePreview(); }
+
+    function addSkill() {
+      const inp = document.getElementById('skillIn');
+      const v = inp.value.trim();
+      if (!v) return;
+      // Support comma-separated bulk add
+      const parts = v.split(',').map(s => s.trim()).filter(Boolean);
+      parts.forEach(p => { if (p) resumeData.skills.push(p); });
+      inp.value = '';
+      renderSkills();
+      updatePreview();
+    }
+    function rmSkill(i) { resumeData.skills.splice(i, 1); renderSkills(); updatePreview(); }
+
+    // ── FORM RENDERING ────────────────────────────────────────────────────
+    function renderForms() {
+      document.getElementById('exp-container').innerHTML = resumeData.experience.map((e, i) => `
+        <div class="item-card">
+            <div class="item-header">
+                <button class="remove-btn" onclick="rmExp(${i})">✕ Remove</button>
+            </div>
+            <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" placeholder="Senior Software Engineer" value="${esc(e.title)}" oninput="resumeData.experience[${i}].title=this.value; updatePreview()">
+            </div>
+            <div class="form-grid">
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Company</label>
+                    <input type="text" placeholder="Acme Corp" value="${esc(e.company)}" oninput="resumeData.experience[${i}].company=this.value; updatePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Duration</label>
+                    <input type="text" placeholder="Jan 2022 – Present" value="${esc(e.duration)}" oninput="resumeData.experience[${i}].duration=this.value; updatePreview()">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:0.7rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                    <label style="margin:0">Description & Impact</label>
+                    <button class="btn-suggest" onclick="aiSuggestExp(${i}, this)">💡 Suggest</button>
+                </div>
+                <textarea id="exp-desc-${i}" placeholder="Use bullet points. Start each with an action verb. Add numbers. E.g:\n• Led migration of monolith to microservices, reducing deploy time by 60%.\n• Built REST APIs serving 500k daily users with 99.9% uptime." oninput="resumeData.experience[${i}].description=this.value; updatePreview()">${esc(e.description)}</textarea>
+                <div id="exp-suggest-${i}" style="display:none; margin-top:0.6rem; padding:0.8rem; background:rgba(255,107,53,0.05); border:1px solid rgba(255,107,53,0.2); border-radius:7px; font-size:0.82rem; color:var(--text); line-height:1.6;"></div>
+            </div>
+        </div>`).join('');
+
+      document.getElementById('edu-container').innerHTML = resumeData.education.map((e, i) => `
+        <div class="item-card">
+            <div class="item-header">
+                <button class="remove-btn" onclick="rmEdu(${i})">✕ Remove</button>
+            </div>
+            <div class="form-grid">
+                <div class="form-group" style="margin-bottom:0">
+                    <label>University / School</label>
+                    <input type="text" placeholder="IIT Delhi" value="${esc(e.school)}" oninput="resumeData.education[${i}].school=this.value; updatePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Degree</label>
+                    <input type="text" placeholder="B.Tech" value="${esc(e.degree)}" oninput="resumeData.education[${i}].degree=this.value; updatePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Field of Study</label>
+                    <input type="text" placeholder="Computer Science" value="${esc(e.field)}" oninput="resumeData.education[${i}].field=this.value; updatePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Year</label>
+                    <input type="text" placeholder="2022" value="${esc(e.year)}" oninput="resumeData.education[${i}].year=this.value; updatePreview()">
+                </div>
+            </div>
+        </div>`).join('');
+
+      document.getElementById('proj-container').innerHTML = resumeData.projects.map((p, i) => `
+        <div class="item-card">
+            <div class="item-header">
+                <button class="remove-btn" onclick="rmProj(${i})">✕ Remove</button>
+            </div>
+            <div class="form-grid">
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Project Name</label>
+                    <input type="text" placeholder="E-Commerce Platform" value="${esc(p.title)}" oninput="resumeData.projects[${i}].title=this.value; updatePreview()">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Tech Stack</label>
+                    <input type="text" placeholder="React, Node.js, MongoDB, AWS" value="${esc(p.technologies)}" oninput="resumeData.projects[${i}].technologies=this.value; updatePreview()">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:0.7rem; margin-bottom:0.4rem;">
+                <label>Description</label>
+                <textarea placeholder="What it does, the problem it solves, and its scale/impact." oninput="resumeData.projects[${i}].description=this.value; updatePreview()">${esc(p.description)}</textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+                <label>GitHub / Demo Link</label>
+                <input type="text" placeholder="github.com/you/project" value="${esc(p.link || '')}" oninput="resumeData.projects[${i}].link=this.value; updatePreview()">
+            </div>
+        </div>`).join('');
+    }
+
+    function renderSkills() {
+      document.getElementById('skill-container').innerHTML = resumeData.skills.map((s, i) => `
+        <div class="skill-tag">
+            ${esc(s)}
+            <span class="rm" onclick="rmSkill(${i})">×</span>
+        </div>`).join('');
+    }
+
+    function esc(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── AI SUGGEST: SUMMARY ───────────────────────────────────────────────
+    // Routes through /api/resume/section-tips — no external server needed
+    async function aiSuggestSummary() {
+      const btn = document.getElementById('sumSuggestBtn');
+      const box = document.getElementById('sumSuggestionBox');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      box.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_URL}/resume/section-tips`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(resumeData)
+        });
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        const tips = data.summary || [];
+
+        if (tips.length === 0) {
+          box.innerHTML = `<span style="color:var(--success)">✅ Your summary looks good! Keep it updated as you grow.</span>`;
+        } else {
+          box.innerHTML = tips.map(t => `
+                <div style="margin-bottom:0.8rem;">
+                    <div style="font-weight:700; color:var(--accent); margin-bottom:0.3rem;">💡 ${t.tip}</div>
+                    <div style="color:var(--muted2); font-size:0.78rem; margin-bottom:0.3rem;"><strong style="color:var(--muted)">WHY:</strong> ${t.why}</div>
+                    <div style="color:var(--text); font-size:0.8rem; margin-bottom:0.3rem;"><strong style="color:var(--muted)">HOW:</strong> ${t.how}</div>
+                    ${t.example ? `<div style="background:rgba(0,0,0,0.3); border-left:2px solid var(--accent); padding:0.5rem 0.7rem; border-radius:4px; font-size:0.75rem; font-family:'JetBrains Mono',monospace; white-space:pre-wrap; margin-top:0.3rem; color:var(--muted2);">${t.example}</div>` : ''}
+                </div>`).join('');
+        }
+        box.style.display = 'block';
+        // Also auto-open the full analysis drawer
+        openDrawer();
+      } catch (e) {
+        box.innerHTML = `<span style="color:var(--muted)">⚠ Could not reach the ATS engine at localhost:8000. Make sure the Python server is running.</span>`;
+        box.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '💡 Suggest';
+      }
+    }
+
+    // ── AI SUGGEST: EXPERIENCE ────────────────────────────────────────────
+    async function aiSuggestExp(idx, btn) {
+      const box = document.getElementById(`exp-suggest-${idx}`);
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      box.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_URL}/resume/section-tips`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(resumeData)
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const expTips = data.experience || [];
+
+        if (expTips.length === 0) {
+          box.innerHTML = `<span style="color:var(--success)">✅ This experience section looks solid!</span>`;
+        } else {
+          box.innerHTML = expTips.slice(0, 3).map(t => `
+                <div style="margin-bottom:0.8rem;">
+                    <div style="font-weight:700; color:var(--accent); margin-bottom:0.25rem;">💡 ${t.tip}</div>
+                    <div style="color:var(--text); font-size:0.8rem; margin-bottom:0.25rem;">${t.how}</div>
+                    ${t.example ? `<div style="background:rgba(0,0,0,0.3); border-left:2px solid var(--accent); padding:0.45rem 0.6rem; border-radius:4px; font-size:0.73rem; font-family:'JetBrains Mono',monospace; white-space:pre-wrap; color:var(--muted2);">${t.example}</div>` : ''}
+                </div>`).join('');
+        }
+        box.style.display = 'block';
+      } catch (e) {
+        box.innerHTML = `<span style="color:var(--muted)">⚠ ATS engine not reachable. Start server at localhost:8000.</span>`;
+        box.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    }
+
+    // ── PREVIEW ───────────────────────────────────────────────────────────
+    function updatePreview() {
+      const r = resumeData;
+      const p = r.personal;
+
+      let html = `<div class="rt-wrap template-${r.template}">`;
+      html += `<div class="rt-name">${p.name || 'Your Name'}</div>`;
+      html += `<div class="rt-contact">
+        ${p.email ? `<span>✉ ${p.email}</span>` : ''}
+        ${p.phone ? `<span>☎ ${p.phone}</span>` : ''}
+        ${p.location ? `<span>📍 ${p.location}</span>` : ''}
+        ${p.linkedin ? `<span>🔗 ${p.linkedin}</span>` : ''}
+        ${p.website ? `<span>🌐 ${p.website}</span>` : ''}
+    </div>`;
+
+      if (r.summary) {
+        html += `<div class="rt-section"><div class="rt-heading">Professional Summary</div><div class="rt-text">${r.summary.replace(/\n/g, '<br>')}</div></div>`;
+      }
+
+      const exp = r.experience.filter(e => e.title || e.company);
+      if (exp.length) {
+        html += `<div class="rt-section"><div class="rt-heading">Experience</div>`;
+        exp.forEach(e => {
+          html += `<div class="rt-item">
+                <div class="rt-item-hdr"><span>${e.title}</span><span>${e.duration}</span></div>
+                <div class="rt-item-sub"><span>${e.company}</span></div>
+                <div class="rt-desc">${(e.description || '').replace(/\n/g, '<br>')}</div>
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      const proj = r.projects.filter(p => p.title);
+      if (proj.length) {
+        html += `<div class="rt-section"><div class="rt-heading">Projects</div>`;
+        proj.forEach(p => {
+          html += `<div class="rt-item">
+                <div class="rt-item-hdr"><span>${p.title}</span></div>
+                <div class="rt-item-sub"><span>${p.technologies}</span>${p.link ? `<span style="font-size:0.85rem">${p.link}</span>` : ''}</div>
+                <div class="rt-desc">${(p.description || '').replace(/\n/g, '<br>')}</div>
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      const edu = r.education.filter(e => e.school || e.degree);
+      if (edu.length) {
+        html += `<div class="rt-section"><div class="rt-heading">Education</div>`;
+        edu.forEach(e => {
+          html += `<div class="rt-item">
+                <div class="rt-item-hdr"><span>${e.school}</span><span>${e.year}</span></div>
+                <div class="rt-item-sub"><span>${e.degree}${e.field ? ' — ' + e.field : ''}</span></div>
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (r.skills.length) {
+        html += `<div class="rt-section"><div class="rt-heading">Skills</div><div class="rt-skills">`;
+        r.skills.forEach(s => html += `<span class="rt-skill">${s}</span>`);
+        html += `</div></div>`;
+      }
+
+      html += `</div>`;
+      document.getElementById('resumePreview').innerHTML = html;
+
+      clearTimeout(window._atsTimeout);
+      window._atsTimeout = setTimeout(calculateATS, 1200);
+    }
+
+    // ── ATS CALCULATION ───────────────────────────────────────────────────
+    let _lastAtsData = null;
+
+    function isResumeEmpty() {
+      const r = resumeData;
+      const p = r.personal;
+      const hasPersonal = p.name.trim() || p.email.trim() || p.phone.trim();
+      const hasSummary = r.summary.trim().length > 0;
+      const hasSkills = r.skills.length > 0;
+      const hasExperience = r.experience.some(e => e.title.trim() || e.company.trim() || e.description.trim());
+      const hasEducation = r.education.some(e => e.school.trim() || e.degree.trim());
+      const hasProjects = r.projects.some(p => p.title.trim());
+      return !(hasPersonal || hasSummary || hasSkills || hasExperience || hasEducation || hasProjects);
+    }
+
+    function resetScoreUI() {
+      document.getElementById('atsVal').textContent = '--';
+      document.getElementById('atsVal').style.color = 'var(--muted)';
+      document.getElementById('atsBox').style.borderColor = 'var(--border2)';
+      document.getElementById('jdBox').style.display = 'none';
+      document.getElementById('notifyCount').style.display = 'none';
+      document.getElementById('drawerBody').innerHTML = `
+        <div class="empty-drawer">
+            <div class="icon">📊</div>
+            <p>Fill in your resume and ATS analysis will appear here automatically.</p>
+        </div>`;
+      document.getElementById('drawerSubtitle').textContent = '';
+    }
+
+    async function calculateATS() {
+      if (isResumeEmpty()) {
+        resetScoreUI();
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/resume/suggestions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(resumeData)
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        _lastAtsData = data;
+
+        // ── Score chip
+        const score = data.ats_score || 0;
+        document.getElementById('atsVal').textContent = score;
+        const atsBox = document.getElementById('atsBox');
+        if (score >= 80) { atsBox.style.borderColor = 'var(--success)'; document.getElementById('atsVal').style.color = 'var(--success)'; }
+        else if (score >= 60) { atsBox.style.borderColor = 'var(--warn)'; document.getElementById('atsVal').style.color = 'var(--warn)'; }
+        else { atsBox.style.borderColor = 'var(--danger)'; document.getElementById('atsVal').style.color = 'var(--danger)'; }
+
+        // ── JD match chip
+        const jdAnalysis = data.jd_analysis || {};
+        const jdBox = document.getElementById('jdBox');
+        if (resumeData.job_description && resumeData.job_description.trim().length > 10 && jdAnalysis.match_percentage !== undefined) {
+          const pct = jdAnalysis.match_percentage;
+          document.getElementById('jdVal').textContent = `${pct}%`;
+          jdBox.style.display = 'flex';
+          if (pct >= 70) { jdBox.style.borderColor = 'var(--success)'; document.getElementById('jdVal').style.color = 'var(--success)'; }
+          else if (pct >= 40) { jdBox.style.borderColor = 'var(--warn)'; document.getElementById('jdVal').style.color = 'var(--warn)'; }
+          else { jdBox.style.borderColor = 'var(--danger)'; document.getElementById('jdVal').style.color = 'var(--danger)'; }
+        } else {
+          jdBox.style.display = 'none';
+        }
+
+        // ── Notify badge
+        const highCount = (data.actionable_tips || []).filter(t => t.priority === 'high').length;
+        const badge = document.getElementById('notifyCount');
+        if (highCount > 0) { badge.style.display = 'inline'; badge.textContent = highCount; }
+        else { badge.style.display = 'none'; }
+
+        // ── Update drawer if open
+        renderDrawer(data);
+
+      } catch (e) {
+        console.warn('ATS engine not reachable at localhost:8000');
+      }
+    }
+
+    // ── DRAWER RENDERER ───────────────────────────────────────────────────
+    function renderDrawer(data) {
+      if (!data) return;
+
+      const score = data.ats_score || 0;
+      const breakdown = data.breakdown || {};
+      const tips = data.actionable_tips || [];
+      const strengths = data.strengths || [];
+      const sectionTips = data.section_tips || {};
+      const jdData = data.jd_analysis || {};
+      const role = data.detected_role;
+
+      document.getElementById('drawerSubtitle').textContent =
+        role ? `Detected role: ${role.replace(/\b\w/g, c => c.toUpperCase())}` : 'Fill in your resume for role detection';
+
+      let html = '';
+
+      // ── SCORE + BREAKDOWN ──────────────────────────────────
+      const scoreColor = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warn)' : 'var(--danger)';
+      html += `<div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:0.8rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+            <div style="font-size:0.65rem; font-weight:700; letter-spacing:2px; color:var(--muted); text-transform:uppercase; font-family:'JetBrains Mono',monospace;">ATS Score</div>
+            <div style="font-size:2rem; font-weight:800; font-family:'JetBrains Mono',monospace; color:${scoreColor};">${score}<span style="font-size:0.9rem; color:var(--muted)">/100</span></div>
+        </div>
+        <div class="breakdown-grid">`;
+
+      const bdMax = { contact: 10, summary: 15, experience: 25, skills: 15, education: 10, projects: 10, role_alignment: 15 };
+      const bdLabels = { contact: 'Contact', summary: 'Summary', experience: 'Experience', skills: 'Skills', education: 'Education', projects: 'Projects', role_alignment: 'Role Fit' };
+      Object.entries(bdLabels).forEach(([key, label]) => {
+        const val = breakdown[key] || 0;
+        const max = bdMax[key] || 10;
+        const pct = Math.round(val / max * 100);
+        html += `<div class="breakdown-row">
+            <span class="breakdown-label">${label}</span>
+            <div class="breakdown-bar-bg"><div class="breakdown-bar" style="width:${pct}%"></div></div>
+            <span class="breakdown-pts">${val}/${max}</span>
+        </div>`;
+      });
+      html += `</div></div>`;
+
+      // ── JD ANALYSIS ────────────────────────────────────────
+      if (resumeData.job_description && resumeData.job_description.trim().length > 10 && jdData.match_percentage !== undefined) {
+        const pct = jdData.match_percentage;
+        const barColor = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warn)' : 'var(--danger)';
+        const matched = data.jd_matched_skills || jdData.matched_skills || [];
+        const missing = data.jd_missing_skills || jdData.missing_skills || [];
+        const verdict = jdData.verdict || '';
+
+        html += `<div class="tip-section-title">JD Match Analysis</div>
+        <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:0.8rem;">
+            <div class="jd-match-bar-header">
+                <span style="font-size:0.72rem; color:var(--muted); font-family:'JetBrains Mono',monospace;">KEYWORD MATCH</span>
+                <span class="jd-match-pct" style="color:${barColor};">${pct}%</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-bottom:0.7rem;"><div class="progress-bar-fill" style="width:${pct}%; background:${barColor};"></div></div>
+            <div class="jd-verdict">${verdict}</div>`;
+
+        if (matched.length > 0) {
+          html += `<div style="margin-bottom:0.6rem;">
+                <div style="font-size:0.65rem; font-weight:700; letter-spacing:1.5px; color:var(--success); margin-bottom:0.4rem; font-family:'JetBrains Mono',monospace;">✓ MATCHED (${matched.length})</div>
+                <div class="skill-pills">${matched.slice(0, 12).map(s => `<span class="skill-pill matched">${s}</span>`).join('')}</div>
+            </div>`;
+        }
+        if (missing.length > 0) {
+          html += `<div>
+                <div style="font-size:0.65rem; font-weight:700; letter-spacing:1.5px; color:var(--danger); margin-bottom:0.4rem; font-family:'JetBrains Mono',monospace;">✗ MISSING (${missing.length})</div>
+                <div class="skill-pills">${missing.slice(0, 12).map(s => `<span class="skill-pill missing">${s}</span>`).join('')}</div>
+            </div>`;
+        }
+        html += `</div>`;
+      }
+
+      // ── STRENGTHS ──────────────────────────────────────────
+      if (strengths.length > 0) {
+        html += `<div class="tip-section-title">What's Working</div>`;
+        strengths.forEach(s => {
+          html += `<div class="tip-card strength">
+                <span class="tip-badge strength">✓ Strength</span>
+                <div class="tip-issue">${s}</div>
+            </div>`;
+        });
+      }
+
+      // ── ACTIONABLE TIPS ────────────────────────────────────
+      const highTips = tips.filter(t => t.priority === 'high');
+      const medTips = tips.filter(t => t.priority === 'medium');
+      const lowTips = tips.filter(t => t.priority === 'low');
+
+      if (highTips.length > 0) {
+        html += `<div class="tip-section-title">🔴 High Priority Fixes</div>`;
+        highTips.forEach(t => html += renderTipCard(t, 'high'));
+      }
+      if (medTips.length > 0) {
+        html += `<div class="tip-section-title">🟡 Improvements</div>`;
+        medTips.forEach(t => html += renderTipCard(t, 'medium'));
+      }
+      if (lowTips.length > 0) {
+        html += `<div class="tip-section-title">🔵 Nice to Have</div>`;
+        lowTips.forEach(t => html += renderTipCard(t, 'low'));
+      }
+
+      // ── SECTION TIPS (how/why/example) ────────────────────
+      const hasSecTips = Object.values(sectionTips).some(arr => arr && arr.length > 0);
+      if (hasSecTips) {
+        html += `<div class="tip-section-title">Per-Section Tips</div>`;
+        Object.entries(sectionTips).forEach(([section, tipArr]) => {
+          if (!tipArr || tipArr.length === 0) return;
+          tipArr.forEach(t => {
+            html += `<div class="tip-card low" style="border-color:rgba(77,159,255,0.15);">
+                    <div style="font-size:0.6rem; font-weight:700; letter-spacing:1.5px; color:var(--info); margin-bottom:0.4rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase;">${section}</div>
+                    <div class="tip-issue">${t.tip}</div>
+                    ${t.why ? `<div class="tip-why"><strong>Why:</strong> ${t.why}</div>` : ''}
+                    ${t.how ? `<div class="tip-how"><strong>How:</strong> ${t.how}</div>` : ''}
+                    ${t.example ? `<div class="tip-example">${t.example}</div>` : ''}
+                </div>`;
+          });
+        });
+      }
+
+      if (tips.length === 0 && strengths.length === 0) {
+        html += `<div class="empty-drawer"><div class="icon">📝</div><p>Start filling your resume and analysis will appear here.</p></div>`;
+      }
+
+      document.getElementById('drawerBody').innerHTML = html;
+
+      // Attach expand/collapse to tip cards
+      document.querySelectorAll('.tip-expandable').forEach(el => {
+        el.addEventListener('click', () => el.classList.toggle('expanded'));
+      });
+    }
+
+    function renderTipCard(t, priority) {
+      const scoreImpact = t.score_impact || '';
+      return `<div class="tip-card ${priority}">
+        <span class="tip-badge ${priority}">${priority === 'high' ? '⚠ High' : priority === 'medium' ? '↑ Medium' : '· Low'}</span>
+        ${scoreImpact ? `<span style="float:right; font-size:0.65rem; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--success);">${scoreImpact}</span>` : ''}
+        <div class="tip-issue">${t.issue || ''}</div>
+        <div class="tip-fix">${t.fix || ''}</div>
+    </div>`;
+    }
+
+    // ── EXPORT PDF — UNCHANGED FROM ORIGINAL ─────────────────────────────
+    async function exportPDF() {
+      const element = document.getElementById('resumePreview');
+      const container = document.querySelector('.doc-container');
+      const btn = document.querySelector('.btn-primary');
+      const originalText = btn.innerText;
+
+      try {
+        btn.innerText = "CAPTURING...";
+        btn.style.opacity = "0.7";
+
+        const originalTransform = element.style.transform;
+        const originalMargin = element.style.marginBottom;
+        const originalWidth = element.style.width;
+        const originalOverflow = container.style.overflow;
+
+        element.style.transform = 'none';
+        element.style.marginBottom = '0';
+        element.style.width = '794px';
+        container.style.overflow = 'visible';
+
+        const opt = {
+          margin: 0,
+          filename: `${resumeData.personal.name || 'UnsaidTalks_Resume'}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, scrollX: 0 },
+          jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+        };
+
+        await new Promise(r => setTimeout(r, 400));
+        await html2pdf().set(opt).from(element).save();
+
+        element.style.transform = originalTransform;
+        element.style.marginBottom = originalMargin;
+        element.style.width = originalWidth;
+        container.style.overflow = originalOverflow;
+      } catch (err) {
+        console.error("PDF Export failed:", err);
+        alert("Export failed. Please try again.");
+      } finally {
+        btn.innerText = originalText;
+        btn.style.opacity = "1";
+      }
+    }
+
+    // ── COLD START ────────────────────────────────────────────────────────
+    renderForms();
+    renderSkills();
+    // Render preview without triggering ATS on cold start (nothing is filled yet)
+    (function coldStart() {
+      const r = resumeData;
+      const p = r.personal;
+      let html = `<div class="rt-wrap template-${r.template}">`;
+      html += `<div class="rt-name" style="color:#bbb; font-style:italic; font-weight:300; font-size:1.8rem;">Your resume will appear here...</div>`;
+      html += `</div>`;
+      document.getElementById('resumePreview').innerHTML = html;
+    })();
+  </script>
+</body>
+
+</html>
