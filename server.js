@@ -17,8 +17,8 @@ if (!GEMINI_API_KEY) {
   process.exit(1);
 }
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uxofskkxxqbkuokduxgl.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4b2Zza2t4eHFia3Vva2R1eGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzExODEsImV4cCI6MjA4OTUwNzE4MX0.DY0dgZFRUp3BLPyv-_xgv4x-E2w_IYjJpvkF4Y2QhJo';
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
