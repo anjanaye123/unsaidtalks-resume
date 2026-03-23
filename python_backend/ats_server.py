@@ -176,52 +176,47 @@ def calculate_ats(text: str, job_description: str = "") -> dict:
     # ── 1. CLARITY (0–20) ────────────────────────────────────
     clarity = 0
 
-    # Robust bullet detection - includes more symbols and handles multiline start accurately
-    bullet_pattern = r'(?m)^\s*[\-\•\*\u2022\u2023\u25e6\u2043\u25cf\u25a0>]\s+\w'
-    explicit_bullets = len(re.findall(bullet_pattern, text))
+    # Multiline flag ensures ^ matches start of each line, not just start of string
+    explicit_bullets = len(re.findall(r'(?m)^\s*[\-\•\*\u2022\u2023\u25e6>]\s+\w', text))
     numbered_bullets = len(re.findall(r'(?m)^\s*\d+[\.\)]\s+[A-Za-z]', text))
-    # PDF-extracted: standalone lines that look like bullets but lost symbols
-    implicit_bullets = len(re.findall(r'\n[A-Z][^A-Z\n]{15,100}(?:\.|\!|\?|\n|$)', text))
-    
+    # PDF-extracted: capitalised lines of sentence length (stripped bullets)
+    implicit_bullets = len(re.findall(r'\n[A-Z][^A-Z\n]{15,100}(?:\.|,|\n|$)', text))
     bullets = explicit_bullets + numbered_bullets
     if bullets < 3:
         bullets = max(bullets, implicit_bullets // 3)
 
-    # Improved sentence detection (excluding dates and decimals)
+    # Count sentences but exclude date patterns like "2020." "2017-2021." and decimals
     sentences = len(re.findall(r'(?<![0-9])[.!?](?!\d)(?:\s|$)', text))
     weak_hits = sum(1 for w in WEAK_VERBS if w in lower)
 
-    # Bullet Points (max 10) - More gradual scaling
-    if bullets >= 10: clarity += 10
-    elif bullets >= 7: clarity += 8
-    elif bullets >= 4: clarity += 6
-    elif bullets >= 2: clarity += 4
-    elif bullets >= 1: clarity += 2
+    # Word count gate — very short text can't score full clarity
+    if word_count >= 150:
+        if bullets >= 12: clarity += 10
+        elif bullets >= 7: clarity += 8
+        elif bullets >= 4: clarity += 6
+        elif bullets >= 1: clarity += 4
+        else: clarity += 2   # Content present but no bullets
 
-    # Sentence Structure (max 10) - More gradual scaling
-    if sentences >= 12: clarity += 10
-    elif sentences >= 8:  clarity += 8
-    elif sentences >= 5:  clarity += 6
-    elif sentences >= 2:  clarity += 4
-    
-    # Word count penalty: If extremely short (< 100 words), cap the score
-    if word_count < 100:
-        clarity = min(5, clarity)
-    elif word_count < 150:
-        clarity = min(15, clarity)
-
-    # Weak language deduction
+        if sentences >= 15: clarity += 10
+        elif sentences >= 8:  clarity += 8
+        elif sentences >= 4:  clarity += 6
+        elif sentences >= 1:  clarity += 4
+    elif word_count >= 80:
+        clarity += 4   # Too short but something is there
+    # Cap weak-verb penalty so one phrase doesn't destroy score
     clarity -= min(6, weak_hits * 2)
     clarity = max(0, min(20, clarity))
 
     # ── 2. IMPACT / QUANTIFICATION (0–30) ────────────────────
     impact = 0
     metrics = re.findall(
-        r'\b\d+\s*%|\b\d+\+|\$[\d,]+[kKmMbB]?'
-        r'|\b\d+\s*(?:million|billion|thousand|hundred|x)\b'
+        r'\b\d+\s*%'
+        r'|\b\d+\+(?=[\s,\.\)!]|$)'
+        r'|\$[\d,]+[kKmMbB]?'
+        r'|\b\d+\s*(?:million|billion|thousand|hundred)\b'
         r'|\b\d+\s*(?:team members?|employees?|clients?|projects?|users?|customers?|people)\b'
         r'|\b(?:revenue|cost|time|efficiency|performance)\s+(?:by\s+)?\d+',
-        text, re.IGNORECASE
+        text, re.IGNORECASE | re.MULTILINE
     )
     # Deduplicate — same number appearing twice shouldn't double-score
     unique_metrics = len(set(m.strip().lower() for m in metrics))
@@ -250,7 +245,7 @@ def calculate_ats(text: str, job_description: str = "") -> dict:
     if re.search(r'[\+\(]?\d[\d\s\-\(\)]{7,}\d', text):
         structure_score += 5
 
-    structure = min(25, (structure_score / 120) * 25)
+    structure = min(25, (structure_score / 125) * 25)
 
     # ── 4. ACTION ORIENTATION (0–25) ─────────────────────────
     found_actions = [v for v in ACTION_VERBS if re.search(r'\b' + v + r'\b', lower)]
@@ -261,42 +256,43 @@ def calculate_ats(text: str, job_description: str = "") -> dict:
     if not has_experience:
         action_oriented = round(action_oriented * 0.5)
 
-    # ── 5. JD MATCH (0–25, only when JD provided) ────────────
+    # ── 5. JD MATCH — purely informational, never changes base score ─────
+    # FIX BUG 1: Removed (raw/100)*75 rescaling — the same resume was scoring
+    # differently just because a JD was or wasn't provided. Base score is now
+    # always clarity+impact+structure+action regardless of JD.
     jd_score = 0
     matched_skills = []
     missing_skills = []
 
     if job_description:
         jd_lower = job_description.lower()
-        jd_skills = [s for s in SKILL_BANK if s in jd_lower]
+        # FIX BUG 3: Word boundaries prevent "sql" matching inside "mysql",
+        # "node" matching inside "nodejs", "r" matching random words, etc.
+        jd_skills = [
+            s for s in SKILL_BANK
+            if re.search(r'\b' + re.escape(s) + r'\b', jd_lower)
+        ]
         total_jd_skills = max(1, len(jd_skills))
         for skill in jd_skills:
-            if skill in lower:
+            if re.search(r'\b' + re.escape(skill) + r'\b', lower):
                 matched_skills.append(skill.upper())
             else:
                 missing_skills.append(skill.upper())
         match_ratio = len(matched_skills) / total_jd_skills
-        jd_score = round(match_ratio * 25)
+        jd_score = round(match_ratio * 100)  # 0–100% shown in UI as JD match
 
-    # ── TOTAL ─────────────────────────────────────────────────
-    if job_description:
-        # With JD: redistribute weights to include JD match
-        raw = clarity + impact + structure + action_oriented
-        # Scale existing 100-pt score to 75 pts and add jd_score (0–25)
-        total = round((raw / 100) * 75 + jd_score)
-    else:
-        total = round(clarity + impact + structure + action_oriented)
-
+    # ── TOTAL — always the same 4-component sum ───────────────
+    total = round(clarity + impact + structure + action_oriented)
     total = max(5, min(100, total))
 
     return {
         "ats_score": total,
         "score_breakdown": {
-            "clarity": round(clarity * 5),            # scale to 100 for UI
+            "clarity": round(clarity * 5),
             "impact": round(impact * 3.33),
             "sections": round(structure * 4),
             "action_oriented": round(action_oriented * 4),
-            "jd_match": round(jd_score * 4),
+            "jd_match": jd_score,  # already 0–100 percentage
         },
         "matched_skills": list(set(matched_skills))[:12],
         "missing_skills": list(set(missing_skills))[:12],

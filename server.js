@@ -17,8 +17,8 @@ if (!GEMINI_API_KEY) {
   process.exit(1);
 }
 
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uxofskkxxqbkuokduxgl.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4b2Zza2t4eHFia3Vva2R1eGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzExODEsImV4cCI6MjA4OTUwNzE4MX0.DY0dgZFRUp3BLPyv-_xgv4x-E2w_IYjJpvkF4Y2QhJo';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -207,38 +207,34 @@ async function generateWithGemini(prompt, maxTokens = 1000) {
 async function generateProfessionalSummary(resumeText) {
   const prompt = `You are a world-class Executive Resume Writer.
 Write a professional summary paragraph for this candidate based on their resume below.
- 
 RULES:
-- Write EXACTLY 4 complete sentences. Every sentence MUST end with a period.
-- DO NOT stop mid-sentence or cut off after an abbreviation like "B.E." or "M.Tech." — those are not sentence ends.
-- Mention the candidate's actual job titles, companies, years of experience, and key skills found in the resume.
+- Write exactly 4 to 5 COMPLETE sentences. Each sentence MUST end with a period.
+- DO NOT stop mid-sentence or cut off abruptly under any circumstances.
+- Mention the candidate's actual job titles, companies, years of experience, and key skills from the resume.
 - Include at least one quantifiable achievement if present in the resume.
-- Respond ONLY with the 4-sentence summary. No labels, no markdown, no preamble like "Here is...".
-- If you see abbreviations like B.E., B.Tech, M.Tech, MBA — these are NOT sentence endings. Continue writing after them.
- 
+- Respond ONLY with the summary text. No labels, no markdown, no introductory text like "Here is...".
+
 Resume:
 ${resumeText.substring(0, 4000)}`;
 
-  const result = await generateWithGemini(prompt, 1024);
+  const result = await generateWithGemini(prompt, 1200);  // raised from 800
 
-  if (!result || result.trim().length < 30) {
+  if (!result) {
     return 'Experienced professional with a strong track record of delivering results across multiple domains.';
   }
 
-  // Count real sentence endings — periods NOT preceded by a single uppercase letter
-  // (which would be an abbreviation like B.E. or M.Tech.)
-  const sentenceEndPattern = /(?<![A-Z])\.(?!\w)|\!|\?/g;
-  const sentences = result.split(sentenceEndPattern).filter(s => s.trim().length > 10);
-
-  // If we got at least 2 real sentences, the response is valid — return as-is
-  if (sentences.length >= 2) {
-    return result.trim();
+  // Only trim to last period if the response is genuinely cut mid-sentence
+  // (i.e. ends with a word character, not punctuation)
+  if (result && /\w$/.test(result.trim())) {
+    const lastPeriod = result.lastIndexOf('.');
+    if (lastPeriod > result.length * 0.5) {   // only trim if we keep >50% of the text
+      return result.substring(0, lastPeriod + 1).trim();
+    }
   }
 
-  // If Gemini returned something but it looks truncated, return it anyway
-  // (better a short real summary than a generic fallback)
-  return result.trim() || 'Experienced professional with a strong track record of delivering results across multiple domains.';
+  return result.trim();
 }
+
 // ══════════════════════════════════════════════════════════════
 //  AI RECOMMENDATIONS — Gemini powered, resume-specific
 //  Called directly in /analyze route (was missing before!)
@@ -280,27 +276,80 @@ STRICT RULES:
 - Each recommendation: 1–2 sentences max.
 - Start each with a bold label like **Quantify This Bullet:**, **Weak Verb Fix:**, **Add Missing Keyword:**, **Missing Section:**, **Rewrite Suggestion:**, etc.
 
-Format: exactly 5 lines, each starting with a number 1–5. No extra text before or after.`;
+Format: Return ONLY a numbered list 1–5. Start your response directly with "1." — no introduction, no preamble, no closing remarks.
+Each item must fit on a SINGLE LINE. Do not break a recommendation across multiple lines.`;
 
   try {
-    const text = await generateWithGemini(prompt, 800);
-    if (!text || text.length < 30) throw new Error('Empty Gemini response');
+    const raw = await generateWithGemini(prompt, 1500);  // raised from 800 — each tip can be 2 sentences
+    if (!raw || raw.length < 30) throw new Error('Empty Gemini response');
 
-    // Parse numbered lines — handles "1." / "1)" / "1:" formats
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
-    const tips = lines
-      .map(l => l.replace(/^\d+[\.\)\:]\s*/, '').trim())
-      .filter(l => l.length > 15)
+    console.log('Gemini raw recommendations:\n', raw.substring(0, 600));
+
+    // Strip markdown fences
+    let text = raw.replace(/```[\w]*\n?/g, '').replace(/```/g, '').trim();
+
+    // Remove preamble lines ("Here are 5...", "Sure!", etc.)
+    text = text.replace(/^[^\n]*(?:here are|following are|below are|recommendations?|sure[!,]?|certainly)[^\n]*\n+/im, '');
+
+    // ── PRIMARY: split on "NUMBER. " or "NUMBER) " at start of line ──────
+    // This regex splits BETWEEN numbered items correctly
+    const chunks = text.split(/\n(?=\s*\d+[\.\)]\s)/);
+
+    let tips = chunks
+      .map(chunk => {
+        // Collapse all internal newlines — Gemini often wraps long tips
+        return chunk
+          .replace(/^\s*\d+[\.\)]\s*/, '')  // remove leading "1. "
+          .replace(/\n/g, ' ')              // collapse line breaks into spaces
+          .replace(/\s{2,}/g, ' ')          // collapse multiple spaces
+          .trim();
+      })
+      .filter(t => t.length > 20)
       .slice(0, 5);
+
+    // ── FALLBACK A: bullet points (-, *, •) ──────────────────────────────
+    if (tips.length < 3) {
+      tips = text
+        .split(/\n(?=\s*[\-\*\•])/)
+        .map(chunk => chunk.replace(/^\s*[\-\*\•]\s*/, '').replace(/\n/g, ' ').replace(/\s{2,}/g, ' ').trim())
+        .filter(t => t.length > 20)
+        .slice(0, 5);
+    }
+
+    // ── FALLBACK B: double-newline paragraphs ────────────────────────────
+    if (tips.length < 3) {
+      tips = text
+        .split(/\n\n+/)
+        .map(p => p.replace(/^\s*\d+[\.\)]\s*/, '').replace(/\n/g, ' ').replace(/\s{2,}/g, ' ').trim())
+        .filter(p => p.length > 20)
+        .slice(0, 5);
+    }
+
+    // ── FALLBACK C: single newlines (last resort) ─────────────────────────
+    if (tips.length < 3) {
+      tips = text
+        .split(/\n/)
+        .map(l => l.replace(/^\s*\d+[\.\)]\s*/, '').replace(/^\s*[\-\*\•]\s*/, '').trim())
+        .filter(l => l.length > 30)
+        .slice(0, 5);
+    }
 
     if (tips.length >= 3) {
       console.log(`✓ Gemini AI Recommendations generated (${tips.length} tips)`);
       return tips;
     }
-    throw new Error('Not enough tips parsed');
+
+    if (tips.length >= 1) {
+      console.log(`⚠ Partial Gemini result (${tips.length} tips) — supplementing with fallback`);
+      // Supplement with rule-based tips to always return 5
+      const fallback = buildFallbackRecommendations(resumeText, atsScore, scoreBreakdown, missingSkills);
+      const combined = [...tips, ...fallback].slice(0, 5);
+      return combined;
+    }
+
+    throw new Error(`Could not parse any tips from Gemini response`);
   } catch (e) {
     console.warn('AI Recommendations fallback triggered:', e.message);
-    // Intelligent rule-based fallback
     return buildFallbackRecommendations(resumeText, atsScore, scoreBreakdown, missingSkills);
   }
 }
@@ -338,27 +387,33 @@ function buildFallbackRecommendations(resumeText, atsScore, scoreBreakdown, miss
 }
 
 async function chatWithAI(message, resumeText, jobDescription) {
+  // Summarise the ontology as compact text instead of full JSON (~800 tokens saved)
+  const ontologySummary = Object.entries(GLOBAL_CAREER_ONTOLOGY)
+    .map(([role, data]) => `${role}: must-haves = ${data.must_haves.join(', ')}`)
+    .join('\n');
+
   const prompt = `You are "The UnsaidTalks Career Master" — a world-class AI Career Coach with expertise across 15+ major global roles.
 Your mission: Provide authoritative, role-specific, and deeply analytical advice.
 
 USER QUESTION: "${message}"
 
 CANDIDATE RESUME:
-${resumeText.substring(0, 4000) || "No resume uploaded yet. Advice should be general but professional."}
+${resumeText.substring(0, 3500) || "No resume uploaded yet. Advice should be general but professional."}
 
 TARGET JOB DESCRIPTION:
-${jobDescription ? jobDescription.substring(0, 1500) : 'General career growth.'}
+${jobDescription ? jobDescription.substring(0, 1000) : 'General career growth.'}
 
-EXPERT KNOWLEDGE (CAREER ONTOLOGY):
-${JSON.stringify(GLOBAL_CAREER_ONTOLOGY, null, 2)}
+ROLE SKILL REQUIREMENTS:
+${ontologySummary}
 
 INSTRUCTIONS:
-1. ROLE FOCUS: Identify the candidate's target role (e.g., Software Engineer, Data Analyst, etc.) and use the ONTOLOGY to highlight what's missing.
-2. NO GENERIC TIPS: Do not say "be confident" or "work hard." Say "Use SQL Window Functions" or "Highlight B2B Sales metrics."
-3. RESUME-AWARE: Point to specific experience sections or bullet points in their resume.
-4. TONE: Professional, encouraging, but direct/analytical.`;
+1. ROLE FOCUS: Identify the candidate's target role and highlight what skills are missing based on the role requirements above.
+2. NO GENERIC TIPS: Do not say "be confident" or "work hard." Give specific, actionable advice like "Add SQL Window Functions to your Skills section" or "Rewrite your DocOnline bullet to highlight the 100+ leads metric."
+3. RESUME-AWARE: Reference specific job titles, companies, or bullet points from their resume.
+4. COMPLETE YOUR RESPONSE: Never stop mid-sentence. Write full, complete paragraphs.
+5. TONE: Professional, encouraging, direct.`;
 
-  return await generateWithGemini(prompt, 2000);
+  return await generateWithGemini(prompt, 3000);  // raised from 2000
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -23,7 +23,6 @@
     --info: #4d9fff;
     --info-bg: rgba(77, 159, 255, 0.08);
 
-    /* legacy aliases kept so app.js colour refs still work */
     --primary-bg: var(--bg);
     --secondary-bg: var(--panel);
     --card-bg: var(--panel2);
@@ -54,7 +53,6 @@ body {
 }
 
 /* ── OPENING ANIMATION ───────────────────────────────────────── */
-/* Enhanced — same scanner concept, tightened timing, added glow */
 .opening-screen {
     position: fixed;
     inset: 0;
@@ -75,7 +73,6 @@ body {
     align-items: center;
 }
 
-/* subtle radial glow behind scanner */
 .tech-container::before {
     content: '';
     position: absolute;
@@ -359,7 +356,6 @@ body {
     letter-spacing: 3px;
 }
 
-/* keep accent on last char like builder does with <span> */
 .nav-brand::after {
     content: '.';
     color: var(--accent);
@@ -386,7 +382,6 @@ body {
     background: var(--accent-glow);
 }
 
-/* ── HERO ────────────────────────────────────────────────────── */
 /* ── HERO ────────────────────────────────────────────────────── */
 .hero {
     min-height: 90vh;
@@ -431,6 +426,7 @@ body {
     z-index: 1;
     max-width: 860px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .hero-title {
@@ -440,7 +436,6 @@ body {
     line-height: 1.2;
     margin-bottom: 1.2rem;
     color: var(--text);
-    white-space: normal;
 }
 
 .gradient-text {
@@ -510,7 +505,6 @@ body {
     line-height: 1.3;
 }
 
-/* arrow connector between steps */
 .hero-step-arrow {
     font-family: 'JetBrains Mono', monospace;
     color: var(--border2);
@@ -712,6 +706,7 @@ body {
     font-size: 0.9rem;
     font-weight: 700;
     transition: all 0.18s;
+    flex-shrink: 0;
 }
 
 .remove-btn:hover {
@@ -947,7 +942,7 @@ body {
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--accent);
     margin-bottom: 1.4rem;
     padding-bottom: 0.8rem;
     border-bottom: 1px solid var(--border);
@@ -1132,15 +1127,6 @@ body {
     letter-spacing: 0.3px;
 }
 
-/* matched = green, missing = red — app.js injects inline styles,
-   these are the base fallback */
-.skill-tag[style*="2ecfc4"],
-.skill-tag[style*="secondary"] {
-    background: var(--success-bg);
-    border-color: rgba(61, 214, 140, 0.3);
-    color: var(--success);
-}
-
 /* ── RECOMMENDATIONS CARD ────────────────────────────────────── */
 .recommendations-list {
     display: flex;
@@ -1227,7 +1213,6 @@ body {
     color: var(--text);
     border: 1px solid var(--border2);
     border-radius: 10px 10px 3px 10px;
-    float: none;
 }
 
 .chat-input-container {
@@ -1308,7 +1293,6 @@ body {
 }
 
 /* ── TOAST ───────────────────────────────────────────────────── */
-/* app.js injects toasts with inline styles; these are used as fallback */
 .toast {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.8rem;
@@ -1335,25 +1319,279 @@ body {
     background: var(--muted);
 }
 
-/* ── RESPONSIVE ──────────────────────────────────────────────── */
-@media (max-width: 768px) {
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — full coverage: tablet → mobile → small mobile
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── TABLET (≤ 1024px) ───────────────────────────────────────── */
+@media (max-width: 1024px) {
     .hero-title {
-        font-size: 2.2rem;
+        font-size: 2.6rem;
     }
 
-    .navbar {
-        padding: 1rem 1.2rem;
+    .hero-steps {
+        gap: 0.3rem;
+    }
+
+    .hero-step {
+        min-width: 110px;
+        padding: 0.9rem 1rem;
     }
 
     .results-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ── MOBILE (≤ 768px) ────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+    /* NAVBAR */
+    .navbar {
+        padding: 0.9rem 1.2rem;
+    }
+
+    .nav-brand {
+        font-size: 0.95rem;
+        letter-spacing: 2px;
+    }
+
+    .nav-btn {
+        font-size: 0.68rem;
+        padding: 0.45rem 0.9rem;
+    }
+
+    /* HERO */
+    .hero {
+        min-height: unset;
+        padding: 3.5rem 1.2rem 2.8rem;
+        align-items: flex-start;
+    }
+
+    .hero-content {
+        max-width: 100%;
+        padding-top: 1rem;
+    }
+
+    .hero-title {
+        font-size: 1.85rem;
+        line-height: 1.25;
+        margin-bottom: 1rem;
+        white-space: normal;
+    }
+
+    .gradient-text {
+        font-size: inherit;
+    }
+
+    .hero-subtitle {
+        font-size: 0.88rem;
+        margin-bottom: 1.8rem;
+        max-width: 100%;
+    }
+
+    /* HERO STEPS — 2×2 grid, arrows hidden */
+    .hero-steps {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+        margin-bottom: 1.8rem;
+        flex-wrap: unset;
+        /* override the nowrap */
+        justify-content: unset;
+        align-items: unset;
+    }
+
+    .hero-step-arrow {
+        display: none;
+    }
+
+    .hero-step {
+        min-width: unset;
+        width: 100%;
+        padding: 0.85rem 0.7rem;
+        border-radius: 10px;
+    }
+
+    .hero-step-icon {
+        font-size: 1.2rem;
+    }
+
+    .hero-step-num {
+        font-size: 0.5rem;
+    }
+
+    .hero-step-label {
+        font-size: 0.72rem;
+    }
+
+    .cta-btn {
+        width: 100%;
+        padding: 0.9rem 1.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* SECTIONS */
+    .upload-section,
+    .jd-section,
+    .analysis-section {
+        padding: 2.5rem 0;
+    }
+
+    .container {
+        padding: 0 1rem;
+    }
+
+    .section-header {
+        margin-bottom: 1.8rem;
+    }
+
+    .section-header h2 {
+        font-size: 1.4rem;
+    }
+
+    .section-header p {
+        font-size: 0.76rem;
+    }
+
+    /* UPLOAD */
+    .upload-area {
+        padding: 2.5rem 1.2rem;
+    }
+
+    .upload-icon {
+        font-size: 2.8rem;
+    }
+
+    .upload-area h3 {
+        font-size: 1.1rem;
+    }
+
+    /* FORM */
+    .form-card {
+        padding: 1.4rem 1rem;
     }
 
     .btn-group {
         flex-direction: column;
     }
 
+    /* RESULTS */
+    .results-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* CARDS */
+    .card {
+        padding: 1.4rem 1.2rem;
+        border-radius: 10px;
+    }
+
+    /* SCORE */
+    .score-circle-container {
+        width: 150px;
+        height: 150px;
+    }
+
+    .score-value {
+        font-size: 2.4rem;
+    }
+
+    /* CHAT */
+    .chat-messages {
+        max-height: 260px;
+    }
+
+    .send-btn {
+        padding: 0.75rem 0.9rem;
+        font-size: 0.68rem;
+    }
+
+    /* MISC */
+    .btn-new-analysis {
+        max-width: 100%;
+    }
+
+    .tech-lines {
+        max-width: 90vw;
+        padding: 0 1rem;
+    }
+
+    .analyzing-text {
+        font-size: 0.85rem;
+        letter-spacing: 1.5px;
+    }
+}
+
+/* ── SMALL MOBILE (≤ 480px) ──────────────────────────────────── */
+@media (max-width: 480px) {
+
     .hero {
-        padding: 4rem 1.2rem 3rem;
+        padding: 3rem 1rem 2.5rem;
+    }
+
+    .hero-title {
+        font-size: 1.55rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.82rem;
+    }
+
+    /* Steps still 2-column but tighter */
+    .hero-steps {
+        gap: 0.5rem;
+    }
+
+    .hero-step {
+        padding: 0.75rem 0.6rem;
+    }
+
+    .hero-step-icon {
+        font-size: 1rem;
+    }
+
+    .hero-step-label {
+        font-size: 0.65rem;
+    }
+
+    /* Opening screen */
+    .brand-text {
+        font-size: 2.2rem;
+    }
+
+    .brand-tagline {
+        font-size: 0.72rem;
+        letter-spacing: 0.8px;
+    }
+
+    /* Results */
+    .match-percentage {
+        font-size: 2.2rem;
+    }
+
+    .score-circle-container {
+        width: 130px;
+        height: 130px;
+    }
+
+    .score-value {
+        font-size: 2rem;
+    }
+
+    .card h3 {
+        font-size: 0.62rem;
+    }
+
+    /* Chat input stacks on very small screens */
+    .chat-input-container {
+        flex-direction: column;
+    }
+
+    .send-btn {
+        width: 100%;
+        padding: 0.75rem;
     }
 }

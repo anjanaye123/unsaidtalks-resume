@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UnsaidTalks - Resume Compiler</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -422,12 +423,10 @@
     }
 
     /* ── SUGGESTIONS DRAWER ──────────────────────────────── */
-    /* The drawer slides out from the right side of the preview pane */
     #suggestionsDrawer {
       position: fixed;
       top: 0;
       right: -440px;
-      /* hidden off-screen */
       width: 420px;
       height: 100vh;
       background: var(--panel);
@@ -481,7 +480,6 @@
       color: var(--danger);
     }
 
-    /* Drawer overlay */
     #drawerOverlay {
       display: none;
       position: fixed;
@@ -637,7 +635,7 @@
       float: right;
     }
 
-    /* ── JD MATCH SECTION IN DRAWER ──────────────────────── */
+    /* ── JD MATCH ────────────────────────────────────────── */
     .jd-match-bar-wrap {
       margin: 0.8rem 0;
     }
@@ -746,7 +744,7 @@
       text-align: right;
     }
 
-    /* ── NOTIFY BADGE (tips count) ───────────────────────── */
+    /* ── NOTIFY BADGE ────────────────────────────────────── */
     .notify-count {
       display: none;
       background: var(--danger);
@@ -1096,7 +1094,7 @@
       font-size: 0.82rem;
     }
 
-    /* Print/PDF (unchanged from original) */
+    /* Print/PDF */
     @media print {
       body {
         background: white !important;
@@ -1125,6 +1123,268 @@
       left: -9999px !important;
       top: 0 !important;
       z-index: -100 !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       MOBILE TAB SWITCHER — only rendered on small screens
+       ══════════════════════════════════════════════════════ */
+    .mobile-tabs {
+      display: none;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       RESPONSIVE BREAKPOINTS
+       ══════════════════════════════════════════════════════ */
+
+    /* ── TABLET (≤ 1100px): shrink editor pane ──────────── */
+    @media (max-width: 1100px) {
+      .editor-pane {
+        width: 46%;
+        min-width: 320px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-header {
+        padding: 0.9rem 1.1rem;
+      }
+
+      .brand {
+        font-size: 0.95rem;
+        letter-spacing: 2px;
+      }
+    }
+
+    /* ── MOBILE (≤ 768px): stack panes, add tab bar ─────── */
+    @media (max-width: 768px) {
+
+      /* Allow body to scroll on mobile */
+      html,
+      body {
+        overflow: auto;
+        height: auto;
+      }
+
+      body {
+        display: block;
+      }
+
+      /* Stack panes vertically */
+      .layout {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      /* Editor pane: full width, auto height */
+      .editor-pane {
+        width: 100%;
+        min-width: unset;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        height: auto;
+        /* Hide/show via tab toggle */
+      }
+
+      /* Preview pane: full width */
+      .preview-pane {
+        width: 100%;
+        height: auto;
+      }
+
+      /* Mobile tab bar */
+      .mobile-tabs {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .mobile-tab {
+        flex: 1;
+        padding: 0.75rem 0.5rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        text-align: center;
+        cursor: pointer;
+        color: var(--muted);
+        border: none;
+        background: transparent;
+        border-bottom: 2px solid transparent;
+        transition: color 0.18s, border-color 0.18s;
+      }
+
+      .mobile-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+
+      /* Tab-controlled visibility */
+      .editor-pane.tab-hidden,
+      .preview-pane.tab-hidden {
+        display: none;
+      }
+
+      /* Nav header on mobile */
+      .nav-header {
+        padding: 0.85rem 1rem;
+        position: sticky;
+        top: 44px;
+        /* below tab bar */
+        z-index: 100;
+        background: var(--panel);
+      }
+
+      .brand {
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+      }
+
+      /* Editor content scrollable */
+      .editor-content {
+        height: auto;
+        overflow-y: visible;
+        padding: 1rem;
+      }
+
+      /* Single-column form grids */
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+      }
+
+      /* Section boxes */
+      .section-box {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      /* Toolbar */
+      .preview-toolbar {
+        padding: 0.65rem 1rem;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        position: sticky;
+        top: 44px;
+        z-index: 100;
+      }
+
+      .toolbar-left {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .score-chip {
+        padding: 0.35rem 0.7rem;
+        gap: 0.4rem;
+      }
+
+      .score-chip .val {
+        font-size: 1.1rem;
+      }
+
+      .score-chip .label {
+        font-size: 0.55rem;
+      }
+
+      /* A4 preview scales to fit mobile width */
+      .doc-container {
+        padding: 1rem 0.5rem;
+        overflow-x: auto;
+      }
+
+      .a4 {
+        transform: scale(0.38) !important;
+        margin-bottom: -6.8in !important;
+        transform-origin: top center;
+      }
+
+      /* Drawer: full screen on mobile */
+      #suggestionsDrawer {
+        width: 100vw;
+        right: -100vw;
+      }
+
+      #suggestionsDrawer.open {
+        right: 0;
+      }
+
+      /* Compile button full width row */
+      .btn.btn-primary {
+        font-size: 0.72rem;
+        padding: 0.5rem 1rem;
+        letter-spacing: 1px;
+      }
+    }
+
+    /* ── SMALL MOBILE (≤ 480px) ─────────────────────────── */
+    @media (max-width: 480px) {
+
+      .brand {
+        font-size: 0.8rem;
+        letter-spacing: 1.5px;
+      }
+
+      .mobile-tab {
+        font-size: 0.62rem;
+        padding: 0.7rem 0.4rem;
+      }
+
+      .section-box {
+        padding: 0.85rem 0.9rem;
+      }
+
+      .section-box h3 {
+        font-size: 0.62rem;
+      }
+
+      .editor-content {
+        padding: 0.85rem;
+      }
+
+      /* Skill add row */
+      #skillIn {
+        font-size: 0.82rem;
+      }
+
+      .tpl-select {
+        font-size: 0.68rem;
+        padding: 0.4rem 0.5rem;
+      }
+
+      .score-chip {
+        padding: 0.3rem 0.55rem;
+      }
+
+      .score-chip .val {
+        font-size: 1rem;
+      }
+
+      .btn-suggest {
+        font-size: 0.62rem;
+        padding: 0.2rem 0.45rem;
+      }
+
+      .a4 {
+        transform: scale(0.32) !important;
+        margin-bottom: -7.5in !important;
+      }
+
+      .drawer-header {
+        padding: 1rem;
+      }
+
+      .drawer-title {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
@@ -1167,11 +1427,17 @@
     </div>
   </div>
 
+  <!-- MOBILE TAB BAR — shown only on ≤768px via CSS -->
+  <div class="mobile-tabs" id="mobileTabs">
+    <button class="mobile-tab active" id="tabEditor" onclick="switchTab('editor')">✏ Editor</button>
+    <button class="mobile-tab" id="tabPreview" onclick="switchTab('preview')">👁 Preview</button>
+  </div>
+
   <!-- MAIN LAYOUT -->
   <div class="layout">
 
     <!-- EDITOR PANE -->
-    <div class="editor-pane">
+    <div class="editor-pane" id="editorPane">
       <div class="nav-header">
         <div class="brand">UNSAID<span>TALKS</span></div>
         <div style="display:flex; align-items:center; gap:0.6rem;">
@@ -1305,7 +1571,7 @@
     </div>
 
     <!-- PREVIEW PANE -->
-    <div class="preview-pane">
+    <div class="preview-pane" id="previewPane">
       <div class="preview-toolbar">
         <div class="toolbar-left">
           <!-- ATS SCORE -->
@@ -1350,6 +1616,34 @@
 
     const API_URL = 'http://localhost:8000/api';
 
+    // ── MOBILE TAB SWITCHER ───────────────────────────────────────────────
+    function switchTab(tab) {
+      const editorPane = document.getElementById('editorPane');
+      const previewPane = document.getElementById('previewPane');
+      const tabEditor = document.getElementById('tabEditor');
+      const tabPreview = document.getElementById('tabPreview');
+
+      if (tab === 'editor') {
+        editorPane.classList.remove('tab-hidden');
+        previewPane.classList.add('tab-hidden');
+        tabEditor.classList.add('active');
+        tabPreview.classList.remove('active');
+      } else {
+        previewPane.classList.remove('tab-hidden');
+        editorPane.classList.add('tab-hidden');
+        tabPreview.classList.add('active');
+        tabEditor.classList.remove('active');
+      }
+    }
+
+    // On resize: if going back to desktop, remove tab-hidden from both panes
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        document.getElementById('editorPane').classList.remove('tab-hidden');
+        document.getElementById('previewPane').classList.remove('tab-hidden');
+      }
+    });
+
     // ── DATA MODEL ────────────────────────────────────────────────────────
     window.resumeData = {
       personal: { name: '', email: '', phone: '', location: '', linkedin: '', website: '' },
@@ -1384,7 +1678,6 @@
       const inp = document.getElementById('skillIn');
       const v = inp.value.trim();
       if (!v) return;
-      // Support comma-separated bulk add
       const parts = v.split(',').map(s => s.trim()).filter(Boolean);
       parts.forEach(p => { if (p) resumeData.skills.push(p); });
       inp.value = '';
@@ -1488,7 +1781,6 @@
     }
 
     // ── AI SUGGEST: SUMMARY ───────────────────────────────────────────────
-    // Routes through /api/resume/section-tips — no external server needed
     async function aiSuggestSummary() {
       const btn = document.getElementById('sumSuggestBtn');
       const box = document.getElementById('sumSuggestionBox');
@@ -1519,7 +1811,6 @@
                 </div>`).join('');
         }
         box.style.display = 'block';
-        // Also auto-open the full analysis drawer
         openDrawer();
       } catch (e) {
         box.innerHTML = `<span style="color:var(--muted)">⚠ Could not reach the ATS engine at localhost:8000. Make sure the Python server is running.</span>`;
@@ -1668,10 +1959,7 @@
     }
 
     async function calculateATS() {
-      if (isResumeEmpty()) {
-        resetScoreUI();
-        return;
-      }
+      if (isResumeEmpty()) { resetScoreUI(); return; }
       try {
         const res = await fetch(`${API_URL}/resume/suggestions`, {
           method: 'POST',
@@ -1682,7 +1970,6 @@
         const data = await res.json();
         _lastAtsData = data;
 
-        // ── Score chip
         const score = data.ats_score || 0;
         document.getElementById('atsVal').textContent = score;
         const atsBox = document.getElementById('atsBox');
@@ -1690,7 +1977,6 @@
         else if (score >= 60) { atsBox.style.borderColor = 'var(--warn)'; document.getElementById('atsVal').style.color = 'var(--warn)'; }
         else { atsBox.style.borderColor = 'var(--danger)'; document.getElementById('atsVal').style.color = 'var(--danger)'; }
 
-        // ── JD match chip
         const jdAnalysis = data.jd_analysis || {};
         const jdBox = document.getElementById('jdBox');
         if (resumeData.job_description && resumeData.job_description.trim().length > 10 && jdAnalysis.match_percentage !== undefined) {
@@ -1704,15 +1990,12 @@
           jdBox.style.display = 'none';
         }
 
-        // ── Notify badge
         const highCount = (data.actionable_tips || []).filter(t => t.priority === 'high').length;
         const badge = document.getElementById('notifyCount');
         if (highCount > 0) { badge.style.display = 'inline'; badge.textContent = highCount; }
         else { badge.style.display = 'none'; }
 
-        // ── Update drawer if open
         renderDrawer(data);
-
       } catch (e) {
         console.warn('ATS engine not reachable at localhost:8000');
       }
@@ -1735,7 +2018,6 @@
 
       let html = '';
 
-      // ── SCORE + BREAKDOWN ──────────────────────────────────
       const scoreColor = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warn)' : 'var(--danger)';
       html += `<div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:0.8rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
@@ -1758,7 +2040,6 @@
       });
       html += `</div></div>`;
 
-      // ── JD ANALYSIS ────────────────────────────────────────
       if (resumeData.job_description && resumeData.job_description.trim().length > 10 && jdData.match_percentage !== undefined) {
         const pct = jdData.match_percentage;
         const barColor = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warn)' : 'var(--danger)';
@@ -1790,7 +2071,6 @@
         html += `</div>`;
       }
 
-      // ── STRENGTHS ──────────────────────────────────────────
       if (strengths.length > 0) {
         html += `<div class="tip-section-title">What's Working</div>`;
         strengths.forEach(s => {
@@ -1801,25 +2081,14 @@
         });
       }
 
-      // ── ACTIONABLE TIPS ────────────────────────────────────
       const highTips = tips.filter(t => t.priority === 'high');
       const medTips = tips.filter(t => t.priority === 'medium');
       const lowTips = tips.filter(t => t.priority === 'low');
 
-      if (highTips.length > 0) {
-        html += `<div class="tip-section-title">🔴 High Priority Fixes</div>`;
-        highTips.forEach(t => html += renderTipCard(t, 'high'));
-      }
-      if (medTips.length > 0) {
-        html += `<div class="tip-section-title">🟡 Improvements</div>`;
-        medTips.forEach(t => html += renderTipCard(t, 'medium'));
-      }
-      if (lowTips.length > 0) {
-        html += `<div class="tip-section-title">🔵 Nice to Have</div>`;
-        lowTips.forEach(t => html += renderTipCard(t, 'low'));
-      }
+      if (highTips.length > 0) { html += `<div class="tip-section-title">🔴 High Priority Fixes</div>`; highTips.forEach(t => html += renderTipCard(t, 'high')); }
+      if (medTips.length > 0) { html += `<div class="tip-section-title">🟡 Improvements</div>`; medTips.forEach(t => html += renderTipCard(t, 'medium')); }
+      if (lowTips.length > 0) { html += `<div class="tip-section-title">🔵 Nice to Have</div>`; lowTips.forEach(t => html += renderTipCard(t, 'low')); }
 
-      // ── SECTION TIPS (how/why/example) ────────────────────
       const hasSecTips = Object.values(sectionTips).some(arr => arr && arr.length > 0);
       if (hasSecTips) {
         html += `<div class="tip-section-title">Per-Section Tips</div>`;
@@ -1843,7 +2112,6 @@
 
       document.getElementById('drawerBody').innerHTML = html;
 
-      // Attach expand/collapse to tip cards
       document.querySelectorAll('.tip-expandable').forEach(el => {
         el.addEventListener('click', () => el.classList.toggle('expanded'));
       });
@@ -1907,10 +2175,8 @@
     // ── COLD START ────────────────────────────────────────────────────────
     renderForms();
     renderSkills();
-    // Render preview without triggering ATS on cold start (nothing is filled yet)
     (function coldStart() {
       const r = resumeData;
-      const p = r.personal;
       let html = `<div class="rt-wrap template-${r.template}">`;
       html += `<div class="rt-name" style="color:#bbb; font-style:italic; font-weight:300; font-size:1.8rem;">Your resume will appear here...</div>`;
       html += `</div>`;
